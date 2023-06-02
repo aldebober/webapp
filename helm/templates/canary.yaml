@@ -1,0 +1,29 @@
+{{- if and $.Values.canary -}}
+{{- $fullName := include "fellowship.fullname" . -}}
+{{- $env := .Values.Environment -}}
+{{- $port := .Values.Service.internalPort -}}
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: {{ $fullName }}
+spec:
+  service:
+    port: {{ $port }}
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $fullName }}-{{ $env }}
+{{- with .Values.canary.autoscaler }}
+  autoscalerRef:
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- with .Values.canary.analysis }}
+  analysis:
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- with .Values.canary.webhooks }}
+  webhooks:
+{{ toYaml . | indent 4 }}
+{{- end }}
+
+{{- end }}

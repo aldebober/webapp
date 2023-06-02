@@ -1,0 +1,220 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "fellowship.fullname" . }}-{{.Values.Environment}}
+  labels:
+    app: {{ .Release.Name }}
+    chart: {{ include "fellowship.chart" . }}
+    release: {{ .Values.image.tag }}
+    heritage: {{ .Release.Service }}
+    tags.datadoghq.com/version: 1.0.0
+spec:
+  replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+    {{- if .Values.strategy }}
+    {{- with .Values.strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+    {{ end }}
+    {{- else if .Values.strategyType}}
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  {{ end }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  template:
+    metadata:
+      {{- if .Values.pod }}
+      {{- with .Values.pod.annotations }}
+      annotations:
+      {{- toYaml . | nindent 8 }}
+      {{ end }}
+      {{- else }}
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: "{{ .Values.Service.internalPort }}"
+        prometheus.io/scrape: "true"
+      {{ end }}
+      labels:
+        app: {{ .Release.Name }}
+        release: {{ .Values.image.tag }}
+        env: {{.Values.Environment}}
+        role: {{ .Values.Service.role }}
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - {{ .Release.Name }}
+              topologyKey: topology.kubernetes.io/zone
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - {{ .Release.Name }}
+              topologyKey: kubernetes.io/hostname
+      containers:
+      - env:
+        - name: DD_LOGS_INJECTION
+          value: "true"
+        - name: DD_VERSION
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.labels['tags.datadoghq.com/version']
+        - name: DD_AGENT_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: DD_ENTITY_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.uid
+      {{- range .Values.env }}
+        - name: {{ .name }}
+        {{- if .secretKeyRef }}
+          valueFrom:
+            secretKeyRef:
+              key: {{ .key }}
+              name: {{ .secretName }}
+        {{- else }}
+          value: {{ .value }}
+        {{- end }}
+      {{- end }}
+        {{- if .Values.envFrom }}
+        envFrom:
+          {{- range .Values.envFrom }}
+        - {{ .name }}:
+            name: {{ .value }}
+          {{- end }}
+        {{- end }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        name: {{ include "fellowship.fullname" . }}
+        {{- if .Values.pod }}
+        lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/sh", "-c", "cp /vault/secrets/envsettings.json /app/envsettings.json"]
+        {{- end }}
+        resources:
+{{ toYaml .Values.resources | indent 12 }}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        {{- if .Values.Volumes }}
+        volumeMounts:
+        {{- range $i, $volume := .Values.Volumes }}
+        - mountPath: {{ $volume.mountPath }}
+          name: {{ $volume.name }}
+            {{- if and $volume.subPath}}
+          subPath: {{ $volume.subPath }}
+            {{- end }}
+            {{- if and $volume.readOnly}}
+          readOnly: {{ $volume.readOnly }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+        ports:
+          {{- range $i, $port := .Values.Ports }}
+          - name: {{ $port.name }}
+            containerPort: {{ $port.targetPort }}
+            protocol: TCP
+          {{- end }}
+          {{- if .Values.startupprobe }}
+          {{- with .Values.startupprobe }}
+          {{- toYaml . | nindent 8 }}
+          {{ end }}
+          {{- else if .Values.liveness }}
+        startupProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.Service.internalPort }}
+          failureThreshold: 30
+          periodSeconds: 10
+          {{- end }}
+          {{- if .Values.livenessprobe }}
+          {{- with .Values.livenessprobe }}
+          {{- toYaml . | nindent 8 }}
+          {{ end }}
+          {{- else if .Values.liveness }}
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /health
+            port: {{ .Values.Service.internalPort }}
+            scheme: HTTP
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 10
+          {{- end }}
+          {{- if .Values.readinessprobe }}
+          {{- with .Values.readinessprobe }}
+          {{- toYaml . | nindent 8 }}
+          {{ end }}
+          {{- else if .Values.readiness }}
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /health
+            port: {{ .Values.Service.internalPort }}
+            scheme: HTTP
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 10
+          {{- end }}
+      dnsPolicy: ClusterFirst
+      {{- if .Values.serviceaccount }}
+      serviceAccount: {{ .Values.serviceaccount }}
+      {{- end }}
+      {{- if .Values.securitycontext }}
+      securityContext:                                                                                        
+        fsGroup: 1001                                                                                         
+        runAsGroup: 1001                                                                                      
+        runAsNonRoot: true                                                                                    
+        runAsUser: 1001
+      {{- end }}
+      {{- if .Values.nodegroup }}
+      nodeSelector:
+        eks.amazonaws.com/nodegroup: {{.Values.nodegroup }}
+        {{ else }}
+      nodeSelector:
+        eks.amazonaws.com/nodegroup: {{ include "fellowship.name" . }}-{{.Values.Environment}}-app-group2
+        {{ end }}
+      {{- if .Values.Volumes }}
+      volumes:
+      {{- range $i, $volume := .Values.Volumes }}
+      - name: {{ $volume.name }}
+        {{- if not $volume.secretName }}
+        configMap:
+          {{- if and $volume.defaultMode }}
+          defaultMode: {{ $volume.defaultMode }}
+          {{- end }}
+          name: {{ $.Release.Name }}
+        {{ else if not $volume.key}}
+        secret:
+          secretName: {{ $.Release.Name }}
+        {{ else }}
+        secret:
+          secretName: {{ $volume.secretName }}
+          items:
+          - key: {{ $volume.key }}
+            path: {{ $volume.path }}
+        {{- end }}
+      {{- end }}
+      {{- end }}

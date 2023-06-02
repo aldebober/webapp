@@ -1,0 +1,81 @@
+# Default values for fellowship Test Environment.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+Environment: dev
+
+strategyType: Recreate
+
+envFrom: {}
+
+readiness: false
+
+liveness: false
+
+nodegroup: trading-dev-eu-1-app-group
+
+image:
+  repository:
+  tag:
+  pullPolicy: IfNotPresent
+
+Service:
+  role: api
+  type: NodePort
+  internalPort: 8089
+
+Ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 8089
+
+resources:
+  requests:
+    memory: "10Mi"
+    cpu: "10m"
+  limits:
+    cpu: "30m"
+    memory: "50Mi"
+
+Volumes: {}
+
+tolerations: []
+
+affinity: {}
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+
+podDisruption:
+  enabled: false
+
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:eu-central-1:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    alb.ingress.kubernetes.io/group.name: test-dev-eu-1
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/security-groups: sg-xxxxxxxxxxxxxxxxxxx
+    alb.ingress.kubernetes.io/subnets: subnet-xxxxxxxxxxxxxx,...
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/healthcheck-path: /
+    alb.ingress.kubernetes.io/success-codes: 200-499
+  path: /
+  hosts:
+    - name: "yurix.tradingdev.io"
+      serviceport: 80
+  extraPaths: []
+  tls: []

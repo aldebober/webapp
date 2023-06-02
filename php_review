@@ -1,0 +1,19 @@
+  0 <?php                                                                                                         
+  1 $message="";                                                                                                  
+  2 if(count($_POST)>0) {                                                                                         
+  3     $conn = mysqli_connect("localhost","root","","app_db");                                                   
+  4     $result = mysqli_query($conn,"SELECT * FROM users WHERE user_name='" . $_POST["userName"] . "' and password = '". $_POST["password"]."'");
+  5     $count  = mysqli_num_rows($result);                                                                       
+  6     if($count==0) {                                                                                           
+  7         $message = "Invalid Username or Password!";                                                           
+  8     } else {                                                                                                  
+  9         $message = "You are successfully authenticated!";                                                     
+ 10     }                                                                                                         
+ 11 }                                                                                                             
+ 12 ?>
+
+ Mama spasi i sohrani..
+ Sorry, I'm not good in php and development but pretty sure there is best practicies for using better style than this.
+ Technically it would work fine but I'd separate checking for login and if it exists - comparing password.
+ DB with root permissions and without password means very goodluck for sql injections and simple rootkits.
+ 

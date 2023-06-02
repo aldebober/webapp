@@ -1,0 +1,21 @@
+{{- if and .Values.autoscaling.enabled}}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "fellowship.fullname" . }}
+  labels:
+    app: {{ include "fellowship.name" . }}
+    chart: {{ include "fellowship.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "fellowship.fullname" . }}-{{.Values.Environment}}
+  minReplicas: {{ .Values.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.autoscaling.maxReplicas }}
+  metrics:
+    {{- toYaml .Values.autoscaling.metrics | nindent 4 }}
+{{- end }}
+
