@@ -208,6 +208,7 @@ resource "aws_launch_template" "eks_lt_app" {
 
 ### Trivy 
 
+```
 Total: 10 (UNKNOWN: 0, LOW: 0, MEDIUM: 8, HIGH: 2, CRITICAL: 0)
 
 ┌────────────┬───────────────┬──────────┬───────────────────┬───────────────┬────────────────────────────────────────────────────────────┐
@@ -249,9 +250,11 @@ Total: 10 (UNKNOWN: 0, LOW: 0, MEDIUM: 8, HIGH: 2, CRITICAL: 0)
 │            │ CVE-2023-2650 │          │                   │ 3.0.9-r0      │ Possible DoS translating ASN.1 object identifiers          │
 │            │               │          │                   │               │ https://avd.aquasec.com/nvd/cve-2023-2650                  │
 └────────────┴───────────────┴──────────┴───────────────────┴───────────────┴────────────────────────────────────────────────────────────┘
+```
 
 ### Kubesec
 
+```
 [
   {
     "object": "Pod/yurix-dev-7cfb5bfc47-kl5wz.trading",
@@ -340,4 +343,4 @@ Total: 10 (UNKNOWN: 0, LOW: 0, MEDIUM: 8, HIGH: 2, CRITICAL: 0)
   }
 ]
 
-
+```
