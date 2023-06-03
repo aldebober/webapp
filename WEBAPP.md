@@ -202,3 +202,142 @@ resource "aws_launch_template" "eks_lt_app" {
 }
 
 ```
+
+
+## Sec
+
+### Trivy 
+
+Total: 10 (UNKNOWN: 0, LOW: 0, MEDIUM: 8, HIGH: 2, CRITICAL: 0)
+
+┌────────────┬───────────────┬──────────┬───────────────────┬───────────────┬────────────────────────────────────────────────────────────┐
+│  Library   │ Vulnerability │ Severity │ Installed Version │ Fixed Version │                           Title                            │
+├────────────┼───────────────┼──────────┼───────────────────┼───────────────┼────────────────────────────────────────────────────────────┤
+│ libcrypto3 │ CVE-2023-0464 │ HIGH     │ 3.0.8-r0          │ 3.0.8-r1      │ Denial of service by excessive resource usage in verifying │
+│            │               │          │                   │               │ X509 policy constraints...                                 │
+│            │               │          │                   │               │ https://avd.aquasec.com/nvd/cve-2023-0464                  │
+│            ├───────────────┼──────────┤                   ├───────────────┼────────────────────────────────────────────────────────────┤
+│            │ CVE-2023-0465 │ MEDIUM   │                   │ 3.0.8-r2      │ Invalid certificate policies in leaf certificates are      │
+│            │               │          │                   │               │ silently ignored                                           │
+│            │               │          │                   │               │ https://avd.aquasec.com/nvd/cve-2023-0465                  │
+│            ├───────────────┤          │                   ├───────────────┼────────────────────────────────────────────────────────────┤
+│            │ CVE-2023-0466 │          │                   │ 3.0.8-r3      │ Certificate policy check not enabled                       │
+│            │               │          │                   │               │ https://avd.aquasec.com/nvd/cve-2023-0466                  │
+│            ├───────────────┤          │                   ├───────────────┼────────────────────────────────────────────────────────────┤
+│            │ CVE-2023-1255 │          │                   │ 3.0.8-r4      │ Input buffer over-read in AES-XTS implementation on 64 bit │
+│            │               │          │                   │               │ ARM                                                        │
+│            │               │          │                   │               │ https://avd.aquasec.com/nvd/cve-2023-1255                  │
+│            ├───────────────┤          │                   ├───────────────┼────────────────────────────────────────────────────────────┤
+│            │ CVE-2023-2650 │          │                   │ 3.0.9-r0      │ Possible DoS translating ASN.1 object identifiers          │
+│            │               │          │                   │               │ https://avd.aquasec.com/nvd/cve-2023-2650                  │
+├────────────┼───────────────┼──────────┤                   ├───────────────┼────────────────────────────────────────────────────────────┤
+│ libssl3    │ CVE-2023-0464 │ HIGH     │                   │ 3.0.8-r1      │ Denial of service by excessive resource usage in verifying │
+│            │               │          │                   │               │ X509 policy constraints...                                 │
+│            │               │          │                   │               │ https://avd.aquasec.com/nvd/cve-2023-0464                  │
+│            ├───────────────┼──────────┤                   ├───────────────┼────────────────────────────────────────────────────────────┤
+│            │ CVE-2023-0465 │ MEDIUM   │                   │ 3.0.8-r2      │ Invalid certificate policies in leaf certificates are      │
+│            │               │          │                   │               │ silently ignored                                           │
+│            │               │          │                   │               │ https://avd.aquasec.com/nvd/cve-2023-0465                  │
+│            ├───────────────┤          │                   ├───────────────┼────────────────────────────────────────────────────────────┤
+│            │ CVE-2023-0466 │          │                   │ 3.0.8-r3      │ Certificate policy check not enabled                       │
+│            │               │          │                   │               │ https://avd.aquasec.com/nvd/cve-2023-0466                  │
+│            ├───────────────┤          │                   ├───────────────┼────────────────────────────────────────────────────────────┤
+│            │ CVE-2023-1255 │          │                   │ 3.0.8-r4      │ Input buffer over-read in AES-XTS implementation on 64 bit │
+│            │               │          │                   │               │ ARM                                                        │
+│            │               │          │                   │               │ https://avd.aquasec.com/nvd/cve-2023-1255                  │
+│            ├───────────────┤          │                   ├───────────────┼────────────────────────────────────────────────────────────┤
+│            │ CVE-2023-2650 │          │                   │ 3.0.9-r0      │ Possible DoS translating ASN.1 object identifiers          │
+│            │               │          │                   │               │ https://avd.aquasec.com/nvd/cve-2023-2650                  │
+└────────────┴───────────────┴──────────┴───────────────────┴───────────────┴────────────────────────────────────────────────────────────┘
+
+### Kubesec
+
+[
+  {
+    "object": "Pod/yurix-dev-7cfb5bfc47-kl5wz.trading",
+    "valid": true,
+    "fileName": "/tmp/yurix.yaml",
+    "message": "Passed with a score of 7 points",
+    "score": 7,
+    "scoring": {
+      "passed": [
+        {
+          "id": "ServiceAccountName",
+          "selector": ".spec .serviceAccountName",
+          "reason": "Service accounts restrict Kubernetes API access and should be configured with least privilege",
+          "points": 3
+        },
+        {
+          "id": "LimitsCPU",
+          "selector": "containers[] .resources .limits .cpu",
+          "reason": "Enforcing CPU limits prevents DOS via resource exhaustion",
+          "points": 1
+        },
+        {
+          "id": "LimitsMemory",
+          "selector": "containers[] .resources .limits .memory",
+          "reason": "Enforcing memory limits prevents DOS via resource exhaustion",
+          "points": 1
+        },
+        {
+          "id": "RequestsCPU",
+          "selector": "containers[] .resources .requests .cpu",
+          "reason": "Enforcing CPU requests aids a fair balancing of resources across the cluster",
+          "points": 1
+        },
+        {
+          "id": "RequestsMemory",
+          "selector": "containers[] .resources .requests .memory",
+          "reason": "Enforcing memory requests aids a fair balancing of resources across the cluster",
+          "points": 1
+        }
+      ],
+      "advise": [
+        {
+          "id": "ApparmorAny",
+          "selector": ".metadata .annotations .\"container.apparmor.security.beta.kubernetes.io/nginx\"",
+          "reason": "Well defined AppArmor policies may provide greater protection from unknown threats. WARNING: NOT PRODUCTION READY",
+          "points": 3
+        },
+        {
+          "id": "SeccompAny",
+          "selector": ".metadata .annotations .\"container.seccomp.security.alpha.kubernetes.io/pod\"",
+          "reason": "Seccomp profiles set minimum privilege and secure against unknown threats",
+          "points": 1
+        },
+        {
+          "id": "CapDropAny",
+          "selector": "containers[] .securityContext .capabilities .drop",
+          "reason": "Reducing kernel capabilities available to a container limits its attack surface",
+          "points": 1
+        },
+        {
+          "id": "CapDropAll",
+          "selector": "containers[] .securityContext .capabilities .drop | index(\"ALL\")",
+          "reason": "Drop all capabilities and add only those required to reduce syscall attack surface",
+          "points": 1
+        },
+        {
+          "id": "ReadOnlyRootFilesystem",
+          "selector": "containers[] .securityContext .readOnlyRootFilesystem == true",
+          "reason": "An immutable root filesystem can prevent malicious binaries being added to PATH and increase attack cost",
+          "points": 1
+        },
+        {
+          "id": "RunAsNonRoot",
+          "selector": "containers[] .securityContext .runAsNonRoot == true",
+          "reason": "Force the running image to run as a non-root user to ensure least privilege",
+          "points": 1
+        },
+        {
+          "id": "RunAsUser",
+          "selector": "containers[] .securityContext .runAsUser -gt 10000",
+          "reason": "Run as a high-UID user to avoid conflicts with the host's user table",
+          "points": 1
+        }
+      ]
+    }
+  }
+]
+
+
